@@ -2,3 +2,4 @@
 *.java~
 src/main/c/RemoveElement/obj
 src/main/c/RemoveElement/bin
+.env
