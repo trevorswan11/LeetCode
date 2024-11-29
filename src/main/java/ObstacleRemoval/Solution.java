@@ -87,6 +87,17 @@ public class Solution {
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
                     int currentId = i * cols + j;
+                    for (int[] direction : directions) {
+                        int neighbor_i = i + direction[0];
+                        int neighbor_j = j + direction[1];
+                        boolean ni = neighbor_i >= 0 && neighbor_i < rows;
+                        boolean nj = neighbor_j >= 0 && neighbor_j < cols;
+                        if (ni && nj) {
+                            int neighborId = neighbor_i * cols + neighbor_j;
+                            int cost = matrix[neighbor_i][neighbor_j] == 0 ? 0 : 1;
+                            this.addEdge(currentId, neighborId, cost);
+                        }
+                    }
                 }
             }
         }
