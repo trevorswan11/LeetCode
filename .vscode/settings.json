@@ -5,5 +5,6 @@
         "ABFCACDB",
         "ACBBD",
         "sqrd"
-    ]
+    ],
+    "java.debug.settings.onBuildFailureProceed": true
 }

@@ -1,11 +1,32 @@
 package ObstacleRemoval;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.PriorityQueue;
 
 public class Solution {
+    private int gridRows, gridCols;
+
     public int minimumObstacles(int[][] grid) {
-        Graph graph = new Graph(grid.length * grid[0].length);
-        return 0;
+        if (grid == null || grid.length == 0)
+            return -1;
+        int sol = 0;
+        gridRows = grid.length;
+        gridCols = grid[0].length;
+        if (gridRows == 1) {
+            for (int i = 0; i < gridCols; i++)
+                sol += (grid[0][i] == 0 ? 0 : 1);
+            return sol;
+        }
+        Graph graph = new Graph(gridRows * gridCols);
+        graph.make(grid);
+        sol = graph.findShortestPath(gridRows, gridCols);
+        graph.printGraph();
+        System.out.println(graph.vertices[(gridRows - 1) * gridCols].getPath());
+        return sol;
     }
 
     /**
@@ -46,8 +67,9 @@ public class Solution {
 
         /**
          * Adds an edge between two vertices with a given cost
-         * @param i The starting index of the vertex of the edge
-         * @param j The ending vertex of the vertex of the edge
+         * 
+         * @param i    The starting index of the vertex of the edge
+         * @param j    The ending vertex of the vertex of the edge
          * @param cost The desired cost of the edge
          * @throws IllegalAccessException If vertex indices are invalid
          */
@@ -83,7 +105,7 @@ public class Solution {
                 }
             }
             // Add edges for adjacent cells
-            int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
                     int currentId = i * cols + j;
@@ -103,18 +125,83 @@ public class Solution {
         }
 
         /**
+         * Finds the shortest path from the top left corner of a matrix to the bottom
+         * right corner using dijkstra's algorithm.
+         *
+         * @param rows The number of rows in the graph
+         * @param cols The number of columns in the graph
+         * @return The cost of the bottom-left vertex
+         */
+        public int findShortestPath(int rows, int cols) {
+            // Priority que to store the vertices by cost
+            PriorityQueue<Vertex> pq = new PriorityQueue<>(Comparator.comparingInt(v -> v.cost));
+            vertices[0].cost = 0;
+            pq.add(vertices[0]);
+            while (!pq.isEmpty()) {
+                Vertex current = pq.poll();
+                // If the vertex is already processed then skip
+                if (!current.done) {
+                    current.done = true;
+                    for (Edge edge : current.edges) {
+                        Vertex neighbor = vertices[edge.endNode];
+                        int newCost = current.cost + edge.cost;
+                        // Update cost if new path is cheaper
+                        if (newCost < neighbor.cost) {
+                            neighbor.cost = newCost;
+                            neighbor.parent = current;
+                            pq.add(neighbor);
+                        }
+                    }
+                }
+            }
+            return vertices[(rows - 1) * cols + (cols - 1)].cost;
+        }
+
+        /**
+         * Prints the vertices of the graph and their edges
+         */
+        public void printGraph() {
+            for (int i = 0; i < numVertices; i++) {
+                Vertex vertex = vertices[i];
+                System.out.print("Vertex " + vertex.id + " -> ");
+                vertex.edges.sort(Comparator.comparingInt(edge -> edge.endNode));
+                for (Edge edge : vertex.edges) {
+                    System.out.print("[" + edge.endNode + ", cost: " + edge.cost + "] ");
+                }
+                System.out.println(); // Move to the next line for the next vertex
+            }
+        }
+
+        /**
          * A class to represent a vertex in a Graph
          */
         public class Vertex {
             private int id;
             private LinkedList<Edge> edges = new LinkedList<>();
-            private boolean encountered = false;
+            // private boolean encountered = false;
             private boolean done = false;
-            private Vertex parent;
-            private int cost;
+            private Vertex parent = null;
+            private int cost = Integer.MAX_VALUE;
 
             public Vertex(int id) {
                 this.id = id;
+            }
+
+            /**
+             * Returns the path that traces back from the bottom-right cell to the top-left
+             * cell.
+             * 
+             * @return A list of integers reconstructing the path
+             */
+            public List<Integer> getPath() {
+                List<Integer> path = new ArrayList<>();
+                Vertex current = this;
+                while (current != null) {
+                    path.add(current.id);
+                    current = current.parent;
+                }
+                Collections.reverse(path);
+                return path;
             }
         }
 
@@ -133,9 +220,22 @@ public class Solution {
     }
 
     public static void main(String[] args) {
-        int[][] testOne = { { 0, 1, 1 }, { 1, 1, 0 }, { 1, 1, 0 } };
-        int[][] testTwo = { { 0, 1, 0, 0, 0 }, { 0, 1, 0, 1, 0 }, { 0, 0, 0, 1, 0 } };
+        int[][] testOne = { { 0, 1, 1 },
+                { 1, 1, 0 },
+                { 1, 1, 0 }
+        };
+        int[][] testTwo = { { 0, 1, 0, 0, 0 },
+                { 0, 1, 0, 1, 0 },
+                { 0, 0, 0, 1, 0 }
+        };
+        int[][] singleRow = new int[][] { { 0, 1, 1, 1, 0 } };
+        int[][] testFail = { { 0, 1, 1 },
+                { 0, 1, 1 },
+                { 1, 1, 0 }
+        };
         System.out.println(new Solution().minimumObstacles(testOne));
         System.out.println(new Solution().minimumObstacles(testTwo));
+        System.out.println(new Solution().minimumObstacles(singleRow));
+        System.out.println(new Solution().minimumObstacles(testFail));
     }
 }
