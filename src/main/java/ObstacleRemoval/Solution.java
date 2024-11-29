@@ -23,7 +23,7 @@ public class Solution {
         }
         Graph graph = new Graph(gridRows * gridCols);
         graph.make(grid);
-        sol = graph.findShortestPath(gridRows, gridCols);
+        sol = graph.findShortestPath(0, (gridRows - 1) * gridCols + (gridCols - 1), gridRows, gridCols);
         graph.printGraph();
         System.out.println(graph.vertices[(gridRows - 1) * gridCols].getPath());
         return sol;
@@ -83,6 +83,7 @@ public class Solution {
                     throw new IllegalArgumentException("Edge already exists");
             // Create an edge from vertex i to j with given cost
             vertices[i].edges.add(new Edge(j, cost));
+            // vertices[j].edges.add(new Edge(i, cost));
         }
 
         /**
@@ -128,15 +129,21 @@ public class Solution {
          * Finds the shortest path from the top left corner of a matrix to the bottom
          * right corner using dijkstra's algorithm.
          *
+         * @param from The index of the starting vertex
+         * @param to The index of the ending vertex
          * @param rows The number of rows in the graph
          * @param cols The number of columns in the graph
          * @return The cost of the bottom-left vertex
+         * @throws IllegalArgumentException If vertex indices are invalid
          */
-        public int findShortestPath(int rows, int cols) {
+        public int findShortestPath(int from, int to, int rows, int cols) throws IllegalArgumentException {
+            // Check if from or to are invalid
+            if (from < 0 || from >= vertices.length || to < 0|| to >= vertices.length || from == to)
+                throw new IllegalArgumentException("Vertex indices out of bounds or equal.");
             // Priority que to store the vertices by cost
             PriorityQueue<Vertex> pq = new PriorityQueue<>(Comparator.comparingInt(v -> v.cost));
-            vertices[0].cost = 0;
-            pq.add(vertices[0]);
+            vertices[from].cost = 0;
+            pq.add(vertices[from]);
             while (!pq.isEmpty()) {
                 Vertex current = pq.poll();
                 // If the vertex is already processed then skip
@@ -154,7 +161,38 @@ public class Solution {
                     }
                 }
             }
-            return vertices[(rows - 1) * cols + (cols - 1)].cost;
+            return vertices[to].cost;
+        }
+
+        /**
+         * Uses Prim's algorithm to compute the minimum spanning tree for the graph.
+         * @return A list of edges where each entry is in the form {source, destination, cost}
+         */
+        public List<Edge> minimumSpanningTree() {
+            List<Edge> mst = new ArrayList<>();
+            PriorityQueue<Edge> pq = new PriorityQueue<>(Comparator.comparingInt(e -> e.cost));
+            // Arbitrarily choose to start at vertex 0
+            Vertex start = vertices[0];
+            start.encountered = true;
+            pq.addAll(start.edges);
+            // Grow the MST until it contains all of the edges
+            while (mst.size() < vertices.length - 1) {
+                // Check if the graph is disconnected
+                if (pq.isEmpty())
+                    return null;
+                Edge edge = pq.poll();
+                Vertex neighbor = vertices[edge.endNode];
+                // Only add to mst if edge has not yet been encountered
+                if (!neighbor.encountered) {
+                    neighbor.encountered = true;
+                    mst.add(edge);
+                    // Add all edges of the neighbor to the priority queue
+                    for (Edge next : neighbor.edges)
+                        if (!vertices[next.endNode].encountered)
+                            pq.add(next);
+                }
+            }
+            return mst;
         }
 
         /**
@@ -178,7 +216,7 @@ public class Solution {
         public class Vertex {
             private int id;
             private LinkedList<Edge> edges = new LinkedList<>();
-            // private boolean encountered = false;
+            private boolean encountered = false;
             private boolean done = false;
             private Vertex parent = null;
             private int cost = Integer.MAX_VALUE;
