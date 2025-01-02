@@ -7,18 +7,23 @@ class Solution:
         for i in range(len(nums) - 1):
             if nums[i] != nums[i + 1]:
                 flag = False
-                continue
+                break
         if flag: return len(nums)
+        if k == 0: return 0
         nums.sort()
-        lim = 2 ** k
+        lim = 2 * k
         length = len(nums)
+        subs = []
         maxx = 0
-        for i in range(length):
-            for j in range(i + 1, length):
-                if nums[j] - nums[i] <= lim:
-                    if len(nums[i::j]) > maxx:
-                        maxx = len(nums[i::j])
-        return maxx
+        for start in range(length):
+            for end in range(start, length):
+                subs.append(nums[start:end + 1])
+                
+        for sub in subs:
+            if (sub[-1] - sub[0]) <= lim:
+                if len(sub) > maxx:
+                    maxx = len(sub)
+        return maxx 
     
 print(Solution().maximumBeauty([4,6,1,2], 2))
 print(Solution().maximumBeauty([1,1,1,1], 10))
